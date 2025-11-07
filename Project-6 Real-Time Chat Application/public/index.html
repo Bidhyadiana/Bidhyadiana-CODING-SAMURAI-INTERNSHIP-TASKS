@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhatsApp Style Chat App</title>
+  <style>
+    /* General reset */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #ece5dd;
+      overflow: hidden;
+    }
+
+    /* Chat container like WhatsApp */
+    .chat-container {
+      max-width: 420px;
+      width: 100%;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 10px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      background-color: #fff;
+    }
+
+    /* Header */
+    .chat-header {
+      background-color: rgb(153, 69, 141);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-size: 18px;
+      border-radius: 10px 10px 0 0;
+      position: relative;
+    }
+    .chat-header img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 15px;
+      object-fit: cover;
+    }
+
+    /* Messages container */
+    #message-container {
+      flex-grow: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background-image: url('https://images.unsplash.com/photo-1619045119136-349759036541?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cHVycGxlJTIwc2t5fGVufDB8fDB8fHww&fm=jpg&q=60&w=3000');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: cover
+      ;
+    }
+
+    /* Message bubbles */
+    .message {
+      max-width: 70%;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      border-radius: 7.5px;
+      position: relative;
+      font-size: 14px;
+      word-wrap: break-word;
+      clear: both;
+    }
+
+    /* Received messages */
+    .message.received {
+      background-color: #fff;
+      float: left;
+      border-top-left-radius: 0;
+      box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+    }
+
+    /* Sent messages */
+    .message.sent {
+      background-color: #dcf8c6;
+      float: right;
+      border-top-right-radius: 0;
+      box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+    }
+
+    /* Timestamp */
+    .timestamp {
+      font-size: 10px;
+      color: gray;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    /* User join/left notifications */
+    .notification {
+      clear: both;
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+
+    /* Input area fixed to bottom */
+    #send-container {
+      display: flex;
+      padding: 10px 15px;
+      border-top: 1px solid #ddd;
+      background: #f7f7f7;
+      border-radius: 0 0 10px 10px;
+    }
+    #message-input {
+      flex-grow: 1;
+      padding: 10px 15px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      outline: none;
+      font-size: 16px;
+    }
+    #send-button {
+      background-color: #075e54;
+      border: none;
+      color: white;
+      padding: 0 20px;
+      margin-left: 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 16px;
+    }
+    #send-button:hover {
+      background-color: #0b7352;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img src="https://i.postimg.cc/PrJdQwDM/user-profile.jpg" alt="Profile" />
+      Real-Time Chat
+    </div>
+
+    <div id="message-container">
+      <!-- Messages will appear here -->
+    </div>
+
+    <form id="send-container" autocomplete="off">
+      <input type="text" id="message-input" placeholder="Type a message" required />
+      <button type="submit" id="send-button">Send</button>
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const messageContainer = document.getElementById('message-container');
+    const messageForm = document.getElementById('send-container');
+    const messageInput = document.getElementById('message-input');
+
+    // Utility to get current time in hh:mm am/pm
+    function formatTime(date) {
+      let hours = date.getHours();
+      let minutes = date.getMinutes();
+      let ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // 0 => 12
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      return hours + ':' + minutes + ' ' + ampm;
+    }
+
+    // Append message with alignment and timestamp
+    function appendMessage(message, type = 'received') {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', type);
+
+      const textNode = document.createTextNode(message);
+      messageElement.appendChild(textNode);
+
+      const timeContainer = document.createElement('div');
+      timeContainer.classList.add('timestamp');
+      timeContainer.innerText = formatTime(new Date());
+
+      messageElement.appendChild(timeContainer);
+      messageContainer.appendChild(messageElement);
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // Append notification message
+    function appendNotification(message) {
+      const notificationElement = document.createElement('div');
+      notificationElement.classList.add('notification');
+      notificationElement.innerText = message;
+      messageContainer.appendChild(notificationElement);
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+
+    // Prompt username once per session
+    let username = sessionStorage.getItem('username');
+    if (!username) {
+      username = prompt('What is your name?');
+      sessionStorage.setItem('username', username);
+    }
+    appendNotification(`You joined as ${username}`);
+    socket.emit('new-user', username);
+
+    // Notify others when user connects
+    socket.on('user-connected', name => {
+      appendNotification(`${name} connected`);
+    });
+
+    // Notify others when user disconnects
+    socket.on('user-disconnected', name => {
+      appendNotification(`${name} disconnected`);
+    });
+
+    // On receiving chat message
+    socket.on('chat-message', data => {
+      const messageType = data.name === username ? 'sent' : 'received';
+      appendMessage(`${data.name}: ${data.message}`, messageType);
+    });
+
+    // On submit, send message
+    messageForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const msg = messageInput.value.trim();
+      if (msg === '') return;
+      /* appendMessage(`You: ${msg}`, 'sent'); */
+      socket.emit('send-chat-message', msg);
+      messageInput.value = '';
+      messageInput.focus();
+    });
+  </script>
+</body>
+</html>

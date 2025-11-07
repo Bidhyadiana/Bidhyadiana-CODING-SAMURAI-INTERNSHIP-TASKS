@@ -1,2 +1,2 @@
 # Bidhyadiana-CODING-SAMURAI-INTERNSHIP-TASKS
-Web Development Internship" at Coding Samurai . As an Intern, I have full confidence in my ability to approach each assigned task with enthusiasm and dedication.
+Welcome to the Web Development Internship Tasks Repository! This repository contains all the tasks and projects completed during my Web Development internship at Coding Samurai.
